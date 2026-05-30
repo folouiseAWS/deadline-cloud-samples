@@ -13,8 +13,17 @@ to USalign/TM-align so the bundle stays pure-Python.
 import argparse
 import csv
 import json
+import math
 import sys
 from pathlib import Path
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+import biotite
+from biotite.structure import superimpose_structural_homologs, tm_score
+from biotite.structure.io.pdb import PDBFile
 
 
 def compute_metrics(pred_path: Path, ref_path: Path, plot_path: Path) -> dict:
@@ -30,17 +39,11 @@ def compute_metrics(pred_path: Path, ref_path: Path, plot_path: Path) -> dict:
 
     Side effect: writes a per-residue calibration plot to plot_path.
 
-    Uses biotite >=1.2 native tm_score + superimpose_structural_homologs
-    (BSD-3) for alignment-aware residue correspondence. References read with
-    model=1 to handle NMR ensembles per CASP/CAMEO convention.
+    Uses biotite native tm_score + superimpose_structural_homologs (BSD-3)
+    for alignment-aware residue correspondence (requires biotite >= 1.2,
+    pinned in the bundle's CondaPackages). References are read with model=1
+    to handle NMR ensembles per CASP/CAMEO convention.
     """
-    import numpy as np
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    from biotite.structure.io.pdb import PDBFile
-    from biotite.structure import superimpose_structural_homologs, tm_score
-
     pred = PDBFile.read(str(pred_path)).get_structure(
         model=1, altloc="first", extra_fields=["b_factor"]
     )
@@ -98,7 +101,7 @@ def compute_metrics(pred_path: Path, ref_path: Path, plot_path: Path) -> dict:
         "tm_score": round(tm, 4),
         "rmsd": round(rmsd, 3),
         "aligned_residues": int(len(ref_indices)),
-        "plddt_error_pearson": round(pearson, 4) if pearson == pearson else float("nan"),
+        "plddt_error_pearson": round(pearson, 4) if not math.isnan(pearson) else float("nan"),
     }
 
 
@@ -113,9 +116,9 @@ def main() -> int:
         print("openjd_status: no reference PDB directory provided, skipping TM-score validation")
         return 0
 
-    # Print biotite version up-front so any "no attribute tm_score" failure is
-    # diagnosable from the log (tm_score requires biotite >= 1.2.0).
-    import biotite
+    # Surface the biotite version so any "no attribute tm_score" failure is
+    # diagnosable from the log (tm_score requires biotite >= 1.2.0, pinned in
+    # the bundle's CondaPackages).
     print(f"openjd_status: biotite version={biotite.__version__}")
 
     results_dir = args.output_dir / "results"
@@ -162,7 +165,7 @@ def main() -> int:
 
     avg_tm = sum(r["tm_score"] for r in rows) / len(rows)
     valid_pearson = [r["plddt_error_pearson"] for r in rows
-                     if r["plddt_error_pearson"] == r["plddt_error_pearson"]]
+                     if not math.isnan(r["plddt_error_pearson"])]
     print(f"openjd_status: mean TM-score across {len(rows)} structures = {avg_tm:.3f}")
     if valid_pearson:
         print(f"openjd_status: mean pLDDT/error Pearson r = {sum(valid_pearson)/len(valid_pearson):.3f} "

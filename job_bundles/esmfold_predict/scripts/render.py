@@ -14,16 +14,14 @@ import json
 import sys
 from pathlib import Path
 
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from biotite.structure.io.pdb import PDBFile
+
 
 def render_pdb(pdb_path: Path, png_path: Path, mean_plddt: float) -> None:
     """Render a CA-trace plot colored by pLDDT, saved to png_path."""
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    from matplotlib.collections import LineCollection
-    import numpy as np
-    from biotite.structure.io.pdb import PDBFile
-
     structure = PDBFile.read(str(pdb_path)).get_structure(
         model=1, altloc="first", extra_fields=["b_factor"]
     )

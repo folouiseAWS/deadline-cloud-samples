@@ -105,7 +105,7 @@ parameterDefinitions:
 
 - name: CondaPackages
   type: STRING
-  default: "python=3.11 pytorch>=2.4=*cuda* cuda-toolkit=12.9 transformers biotite numpy matplotlib"
+  default: "python=3.11 pytorch>=2.4=*cuda* cuda-toolkit=12.9 transformers biotite>=1.2 numpy matplotlib"
   description: "Conda packages installed by the queue's Conda queue environment."
   userInterface:
     control: HIDDEN

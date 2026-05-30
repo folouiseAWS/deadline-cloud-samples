@@ -115,6 +115,9 @@ def main() -> int:
 
     print(f"openjd_status: loading {args.model_id} (~5.2 GB on first run)")
     t0 = time.time()
+    # Imports deferred until after _bootstrap_hf_dirs(): transformers reads
+    # HF_HOME / HF_HUB_CACHE at import time, so importing earlier would cache
+    # the 5.2 GB weights to ~/.cache instead of OutputDir/.hf_cache.
     import torch
     from transformers import AutoTokenizer, EsmForProteinFolding
 
